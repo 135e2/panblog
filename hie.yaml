@@ -1,0 +1,5 @@
+Resolving dependencies...
+cradle:
+  cabal:
+    - path: "app/Main.hs"
+      component: "panblog:exe:panblog"
