@@ -27,3 +27,4 @@ cabal.project.local~
 content/
 templates/
 output/
+config.yaml
