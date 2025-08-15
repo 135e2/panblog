@@ -23,10 +23,22 @@ main :: IO ()
 main = do
   result <- runIO $ do
     globalCtx <- readConfigYaml "config.yaml"
-    tmplFiles <- liftIO $ listDirectory templatesDir
-    let notHTMLFiles = sort $ Prelude.filter (\f -> takeExtension f /= ".html") tmplFiles
-        -- prepend slash to stay root-level
-        cssFiles = Prelude.map ('/' :) $ Prelude.filter ((== ".css") . takeExtension) notHTMLFiles
+
+    (pages, cssFiles) <- liftIO $ do
+      whenM (doesDirectoryExist outputDir) $ removeDirectoryRecursive outputDir
+      createDirectory outputDir
+      pages <- listDirectory contentDir
+      notHTMLFiles <- fmap (sort . Prelude.filter (\f -> takeExtension f /= ".html")) $ listDirectory templatesDir
+      let isTopLevelCss path = takeExtension path == ".css" && takeDirectory path == templatesDir
+      -- prepend slash to stay root-level
+      cssFiles <-
+        concatMapM
+          ( \f ->
+              fmap (Prelude.map (('/' :) . takeFileName)) $ copyRecursive isTopLevelCss (templatesDir </> f) (outputDir </> f)
+          )
+          notHTMLFiles
+      return (pages, cssFiles)
+
     globalCtx' <- setListVariable "css" (Prelude.map T.pack cssFiles) globalCtx
     mPageTemplate <- compileTmpl (templatesDir </> "page.html")
     mHomeTemplate <- compileTmpl (templatesDir </> "home.html")
@@ -34,14 +46,6 @@ main = do
       (Just p, Just h) -> return (p, h)
       (Nothing, _) -> throwError $ PandocAppError "cannot compile page template"
       (_, Nothing) -> throwError $ PandocAppError "cannot compile home template"
-
-    liftIO $ do
-      exists <- doesDirectoryExist outputDir
-      when exists (removeDirectoryRecursive outputDir)
-      createDirectory outputDir
-      forM_ notHTMLFiles $ \f -> copyFile (templatesDir </> f) (outputDir </> f)
-
-    pages <- liftIO $ listDirectory contentDir
 
     blogList <- fmap Prelude.concat $
       forM pages $ \entry -> do

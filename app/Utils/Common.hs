@@ -2,18 +2,45 @@
 
 module Utils.Common where
 
+import Control.Monad (forM, when)
 import Data.Map as M
 import Data.Text
+import System.Directory
+import System.FilePath
 import Text.DocTemplates (Context (..), Val (..), toVal)
 import Text.Pandoc
 import Text.Pandoc.Readers.Markdown (yamlToMeta)
 import Utils.Pandoc
+
+-- Monad utils
+whenM :: (Monad m) => m Bool -> m () -> m ()
+whenM condM action = condM >>= (`when` action)
+
+concatMapM :: (Monad m) => (a -> m [b]) -> [a] -> m [b]
+concatMapM f xs = fmap Prelude.concat (mapM f xs)
 
 readConfigYaml :: FilePath -> PandocIO (Context Text)
 readConfigYaml fp = do
   content <- readFileStrict fp
   meta <- yamlToMeta readerOptions (Just fp) content
   return $ Context (metaToVal meta)
+
+copyRecursive :: (FilePath -> Bool) -> FilePath -> FilePath -> IO [FilePath]
+copyRecursive filterFn src dst = do
+  isDir <- doesDirectoryExist src
+  if isDir
+    then do
+      createDirectory dst
+      contents <- listDirectory src
+      fmap Prelude.concat $ forM contents $ \name -> do
+        let srcPath = src </> name
+            dstPath = dst </> name
+        copyRecursive filterFn srcPath dstPath
+    else do
+      copyFile src dst
+      if filterFn src
+        then return [makeRelative "." dst]
+        else return []
 
 setVariable :: Text -> Text -> Context Text -> PandocIO (Context Text)
 setVariable key val (Context ctx) = return $ Context $ M.alter go key ctx
