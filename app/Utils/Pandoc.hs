@@ -46,6 +46,13 @@ compileTmpl templatePath = do
 renderTmpl :: Template Text -> Context Text -> Text
 renderTmpl tmpl (Context ctx) = render Nothing $ renderTemplate tmpl ctx
 
+extractAttr :: Text -> Val Text -> Text
+extractAttr attr (MapVal (Context m)) =
+  case M.lookup attr m of
+    Just (SimpleVal t) -> render Nothing t
+    _ -> pack ""
+extractAttr _ _ = pack ""
+
 extractMeta :: Pandoc -> Meta
 extractMeta (Pandoc meta _) = meta
 

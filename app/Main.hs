@@ -75,7 +75,10 @@ main = do
             let metaValMapWithUrl = M.insert "url" (toVal (pack $ entry </> "index.html")) metaValMap
             return [MapVal (Context metaValMapWithUrl) :: Val Text]
 
-    let homeCtx = mergeContext globalCtx' $ Context $ M.fromList [("entries", ListVal blogList)]
+    -- sort by date descending (newest first)
+    let blogListSorted = sortBy (\a b -> compare (extractAttr "date" b) (extractAttr "date" a)) blogList
+
+    let homeCtx = mergeContext globalCtx' $ Context $ M.fromList [("entries", ListVal blogListSorted)]
     liftIO $ TIO.writeFile (outputDir </> "index.html") $ renderTmpl homeTemplate homeCtx
 
   case result of
