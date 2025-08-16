@@ -3,7 +3,7 @@
 
 module Main where
 
-import Control.Monad (forM, forM_, when)
+import Control.Monad (forM)
 import Control.Monad.Except (throwError)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.List
@@ -58,12 +58,8 @@ main = do
         if not mdExists
           then liftIO $ ioError $ userError $ "Missing file: " ++ mdPath
           else do
-            liftIO $ do
-              createDirectory outEntryDir
-              files <- listDirectory entryDir
-              forM_ files $ \f ->
-                when (f /= "index.md") $
-                  copyFile (entryDir </> f) (outEntryDir </> f)
+            _ <- liftIO $ do
+              copyRecursive (\p -> takeFileName p /= "index.md") entryDir outEntryDir
 
             pandocDoc <- readToPandocDoc readerOptions mdPath
             let metaValMap = metaToVal $ extractMeta pandocDoc
