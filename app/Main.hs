@@ -34,7 +34,7 @@ main = do
       cssFiles <-
         concatMapM
           ( \f ->
-              fmap (Prelude.map (('/' :) . takeFileName)) $ copyRecursive isTopLevelCss (templatesDir </> f) (outputDir </> f)
+              fmap (Prelude.map (('/' :) . takeFileName)) $ copyRecursive isTopLevelCss False (templatesDir </> f) (outputDir </> f)
           )
           notHTMLFiles
       return (pages, cssFiles)
@@ -59,7 +59,7 @@ main = do
           then liftIO $ ioError $ userError $ "Missing file: " ++ mdPath
           else do
             _ <- liftIO $ do
-              copyRecursive (\p -> takeFileName p /= "index.md") entryDir outEntryDir
+              copyRecursive (\p -> takeFileName p == "index.md") True entryDir outEntryDir
 
             pandocDoc <- readToPandocDoc readerOptions mdPath
             let metaValMap = metaToVal $ extractMeta pandocDoc

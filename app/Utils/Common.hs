@@ -25,8 +25,10 @@ readConfigYaml fp = do
   meta <- yamlToMeta readerOptions (Just fp) content
   return $ Context (metaToVal meta)
 
-copyRecursive :: (FilePath -> Bool) -> FilePath -> FilePath -> IO [FilePath]
-copyRecursive filterFn src dst = do
+-- NOCOPY iff (filterFn && applyCopyFilter == True)
+-- which means DO NO COPY if filter applies
+copyRecursive :: (FilePath -> Bool) -> Bool -> FilePath -> FilePath -> IO [FilePath]
+copyRecursive filterFn applyCopyFilter src dst = do
   isDir <- doesDirectoryExist src
   if isDir
     then do
@@ -35,10 +37,12 @@ copyRecursive filterFn src dst = do
       fmap Prelude.concat $ forM contents $ \name -> do
         let srcPath = src </> name
             dstPath = dst </> name
-        copyRecursive filterFn srcPath dstPath
+        copyRecursive filterFn applyCopyFilter srcPath dstPath
     else do
-      copyFile src dst
-      if filterFn src
+      let filterR = filterFn src
+      when (not (filterR && applyCopyFilter)) $
+        copyFile src dst
+      if filterR
         then return [makeRelative "." dst]
         else return []
 
