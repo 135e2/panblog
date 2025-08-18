@@ -59,7 +59,7 @@ main = do
           then liftIO $ ioError $ userError $ "Missing file: " ++ mdPath
           else do
             _ <- liftIO $ do
-              copyRecursive (\p -> takeFileName p == "index.md") True entryDir outEntryDir
+              copyRecursive (\p -> takeExtension p == ".md") True entryDir outEntryDir
 
             pandocDoc <- readToPandocDoc readerOptions mdPath
             let metaValMap = metaToVal $ extractMeta pandocDoc
