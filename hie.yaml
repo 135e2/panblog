@@ -1,4 +1,3 @@
-Resolving dependencies...
 cradle:
   cabal:
     - path: "app/Main.hs"
