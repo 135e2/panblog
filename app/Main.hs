@@ -78,5 +78,5 @@ main = do
     liftIO $ TIO.writeFile (outputDir </> "index.html") $ renderTmpl homeTemplate homeCtx
 
   case result of
-    Left err -> print $ T.pack ("Pandoc error: " ++ show err)
+    Left err -> print $ T.pack ("Pandoc error: " ++ Prelude.show err)
     Right _ -> return ()
