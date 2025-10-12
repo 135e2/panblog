@@ -21,7 +21,8 @@ writerOptions :: WriterOptions
 writerOptions =
   def
     { writerTableOfContents = True,
-      writerReferenceLinks = True
+      writerReferenceLinks = True,
+      writerHTMLMathMethod = MathJax (pack "https://cdn.jsdelivr.net/npm/mathjax@4/tex-svg.js")
     }
 
 readToPandocDoc ::
