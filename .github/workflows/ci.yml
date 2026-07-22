@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install static C libraries
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev libgmp-dev
+
+      - name: Setup Haskell
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: '9.6.7'
+          cabal-version: '3.12.1.0'
+          cabal-update: true
+          enable-stack: false
+
+      - name: Configure
+        run: |
+          cabal update
+          cabal configure --enable-executable-static
+
+      - name: Build
+        run: cabal build all
+
+      - name: Get binary path
+        id: bin-path
+        run: echo "path=$(cabal list-bin panblog)" >> "$GITHUB_OUTPUT"
+
+      - name: Verify static linking
+        run: ldd "${{ steps.bin-path.outputs.path }}" || true
+
+      - name: Strip binary
+        run: strip "${{ steps.bin-path.outputs.path }}"
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: panblog
+          path: ${{ steps.bin-path.outputs.path }}
+
+  hlint:
+    name: HLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run HLint
+        uses: haskell-actions/hlint-setup@v2
+        with:
+          version: '3.8'
+
+      - name: HLint check
+        uses: haskell-actions/hlint-run@v2
+        with:
+          path: app/
+          fail-on: warning
