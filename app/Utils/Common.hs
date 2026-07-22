@@ -2,7 +2,7 @@
 
 module Utils.Common where
 
-import Control.Monad (forM, when)
+import Control.Monad (forM, when, unless)
 import Data.Map as M
 import Data.Text
 import System.Directory
@@ -40,7 +40,7 @@ copyRecursive filterFn applyCopyFilter src dst = do
         copyRecursive filterFn applyCopyFilter srcPath dstPath
     else do
       let filterR = filterFn src
-      when (not (filterR && applyCopyFilter)) $
+      unless (filterR && applyCopyFilter) $
         copyFile src dst
       if filterR
         then return [makeRelative "." dst]

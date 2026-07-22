@@ -28,13 +28,13 @@ main = do
       whenM (doesDirectoryExist outputDir) $ removeDirectoryRecursive outputDir
       createDirectory outputDir
       pages <- listDirectory contentDir
-      notHTMLFiles <- fmap (sort . Prelude.filter (\f -> takeExtension f /= ".html")) $ listDirectory templatesDir
+      notHTMLFiles <- sort . Prelude.filter (\f -> takeExtension f /= ".html") <$> listDirectory templatesDir
       let isTopLevelCss path = takeExtension path == ".css" && takeDirectory path == templatesDir
       -- prepend slash to stay root-level
       cssFiles <-
         concatMapM
           ( \f ->
-              fmap (Prelude.map (('/' :) . takeFileName)) $ copyRecursive isTopLevelCss False (templatesDir </> f) (outputDir </> f)
+              Prelude.map (('/' :) . takeFileName) <$> copyRecursive isTopLevelCss False (templatesDir </> f) (outputDir </> f)
           )
           notHTMLFiles
       return (pages, cssFiles)
